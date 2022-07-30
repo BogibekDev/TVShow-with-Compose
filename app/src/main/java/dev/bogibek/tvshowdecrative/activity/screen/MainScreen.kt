@@ -27,15 +27,24 @@ import dev.bogibek.tvshowdecrative.viewmodel.MainViewModel
 @Composable
 fun MainScreen(navController: NavController) {
     val viewModel = hiltViewModel<MainViewModel>()
-    val is_loading by viewModel.isLoading.observeAsState(false)
+    val isLoading by viewModel.isLoading.observeAsState(false)
     val tvShows by viewModel.tvShowsFromApi.observeAsState(arrayListOf())
-    MainScreenContent(is_loading, tvShows)
+    MainScreenContent(isLoading, tvShows, onItemClick = {
+        //save TVShow to local
+        viewModel.insertTVShowToDB(it)
+        //open details Screen
+        navController.navigate("details/${it.id}/${it.name}/${it.network}")
+    })
 
 }
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
-fun MainScreenContent(isLoading: Boolean, tvShows: ArrayList<TVShow>) {
+fun MainScreenContent(
+    isLoading: Boolean,
+    tvShows: ArrayList<TVShow>,
+    onItemClick: ((TVShow) -> Unit)?
+) {
     Scaffold(
         backgroundColor = Color.Black,
         topBar = {
@@ -62,7 +71,7 @@ fun MainScreenContent(isLoading: Boolean, tvShows: ArrayList<TVShow>) {
             ) {
                 items(tvShows.size) {
                     val tvShow = tvShows[it]
-                    itemTVShow(tvShow)
+                    itemTVShow(tvShow, onItemClick)
                 }
             }
         }
