@@ -3,12 +3,18 @@ package dev.bogibek.tvshowdecrative.viewmodel
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.paging.Pager
+import androidx.paging.PagingConfig
+import androidx.paging.PagingData
+import androidx.paging.cachedIn
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dev.bogibek.tvshowdecrative.model.TVShow
 import dev.bogibek.tvshowdecrative.model.TVShowPopular
 import dev.bogibek.tvshowdecrative.repository.TVShowRepository
+import dev.bogibek.tvshowdecrative.source.MovieSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
@@ -22,6 +28,12 @@ class MainViewModel @Inject constructor(private val tvShowRepository: TVShowRepo
     val tvShowsFromApi = MutableLiveData<ArrayList<TVShow>>()
     val tvShowPopular = MutableLiveData<TVShowPopular>()
 
+    var pages = 10
+
+    val movie: Flow<PagingData<TVShow>> = Pager(PagingConfig(pages)) {
+        MovieSource(tvShowRepository)
+    }.flow.cachedIn(viewModelScope)
+
     init {
         apiTVShowPopular(1)
     }
@@ -33,6 +45,7 @@ class MainViewModel @Inject constructor(private val tvShowRepository: TVShowRepo
             withContext(Dispatchers.Main) {
                 if (response.isSuccessful) {
                     val resp = response.body()!!
+                    pages = resp.pages
                     tvShowPopular.postValue(resp)
                     tvShowsFromApi.postValue(resp.tv_shows)
                     isLoading.value = false

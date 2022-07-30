@@ -20,21 +20,25 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavController
+import androidx.paging.PagingData
+import androidx.paging.compose.LazyPagingItems
+import androidx.paging.compose.collectAsLazyPagingItems
 import dev.bogibek.tvshowdecrative.item.itemTVShow
 import dev.bogibek.tvshowdecrative.model.TVShow
 import dev.bogibek.tvshowdecrative.viewmodel.MainViewModel
+import kotlinx.coroutines.flow.Flow
 
 @Composable
 fun MainScreen(navController: NavController) {
     val viewModel = hiltViewModel<MainViewModel>()
     val isLoading by viewModel.isLoading.observeAsState(false)
-    val tvShows by viewModel.tvShowsFromApi.observeAsState(arrayListOf())
-    MainScreenContent(isLoading, tvShows, onItemClick = {
+    val tvShows = viewModel.movie
+    MainScreenContent(isLoading, tvShows) {
         //save TVShow to local
         viewModel.insertTVShowToDB(it)
         //open details Screen
         navController.navigate("details/${it.id}/${it.name}/${it.network}")
-    })
+    }
 
 }
 
@@ -42,7 +46,7 @@ fun MainScreen(navController: NavController) {
 @Composable
 fun MainScreenContent(
     isLoading: Boolean,
-    tvShows: ArrayList<TVShow>,
+    tvShows: Flow<PagingData<TVShow>>,
     onItemClick: ((TVShow) -> Unit)?
 ) {
     Scaffold(
@@ -65,13 +69,15 @@ fun MainScreenContent(
                 )
             }
         } else {
+            val tvShowList: LazyPagingItems<TVShow> = tvShows.collectAsLazyPagingItems()
             LazyVerticalGrid(
                 GridCells.Fixed(2),
                 modifier = Modifier.padding(5.dp)
             ) {
-                items(tvShows.size) {
-                    val tvShow = tvShows[it]
-                    itemTVShow(tvShow, onItemClick)
+
+                items(tvShowList.itemCount) {
+                    val tvShow = tvShowList[it]
+                    itemTVShow(tvShow!!, onItemClick)
                 }
             }
         }
